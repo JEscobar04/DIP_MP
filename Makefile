@@ -9,7 +9,6 @@ endif
 
 build : Image FileIO DIPs Test PhotoLab
 	$(CC) $(TARGETS) -o PhotoLab
-	cp ~ceng231/hw7/index.html ~/public_html/ceng231
 
 Image : Image.c Image.h
 	$(CC) -c $(CFLAGS) Image.c -o Image.o
@@ -29,4 +28,5 @@ PhotoLab : PhotoLab.c
 
 clean : 
 	$(RM) $(TARGETS)
+
 .PHONY : clean
