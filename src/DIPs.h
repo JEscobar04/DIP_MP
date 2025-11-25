@@ -28,6 +28,6 @@ IMAGE *Sharpen(IMAGE *image);
 int saturate(int pixel_value);
 
 /* Helper to pass any array */
-int sharpen_helper(unsigned char* V, unsigned int width, int x, int y);
+int sharpen_helper(unsigned char *V, unsigned int width, int x, int y);
 
 #endif
