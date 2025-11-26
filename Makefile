@@ -7,23 +7,23 @@ ifeq ($(DEBUG), 1)
 	CFLAGS += -g
 endif
 
-build : Image FileIO DIPs Test PhotoLab
+build : src/Image src/FileIO src/DIPs src/Test src/PhotoLab
 	$(CC) $(TARGETS) -o PhotoLab
 
-Image : Image.c Image.h
-	$(CC) -c $(CFLAGS) Image.c -o Image.o
+Image : src/Image.c src/Image.h
+	$(CC) -c $(CFLAGS) src/Image.c -o Image.o
 
-FileIO : FileIO.c FileIO.h
-	$(CC) -c $(CFLAGS) FileIO.c -o FileIO.o
+FileIO : src/FileIO.c src/FileIO.h
+	$(CC) -c $(CFLAGS) src/FileIO.c -o FileIO.o
 
-DIPs : DIPs.c DIPs.h
-	$(CC) -c $(CFLAGS) DIPs.c -o DIPs.o
+DIPs : src/DIPs.c src/DIPs.h
+	$(CC) -c $(CFLAGS) src/DIPs.c -o DIPs.o
 
-Test : Test.c Test.h
-	$(CC) -c $(CFLAGS) Test.c -o Test.o
+Test : src/Test.c src/Test.h
+	$(CC) -c $(CFLAGS) src/Test.c -o Test.o
 
-PhotoLab : PhotoLab.c
-	$(CC) -c $(CFLAGS) PhotoLab.c -o PhotoLab.o
+PhotoLab : src/PhotoLab.c
+	$(CC) -c $(CFLAGS) src/PhotoLab.c -o PhotoLab.o
 .PHONY : PhotoLab
 
 clean : 
