@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <libgen.h>
+#include <omp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,7 @@ const char *FILE_EXT = ".ppm";
 
 int main(int argc, char **argv) {
     if (argc == 1) {
-        fprintf(stderr, "Sequential Digital Image Processing\n");
+        fprintf(stderr, "Parallel Digital Image Processing\n");
         fprintf(stderr, "Usage: %s [FILE_NAME...]\n", argv[0]);
         return 1;
     }
@@ -33,6 +34,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Use the maximum number of available processors
+    int num_procs = omp_get_num_procs();
+    omp_set_num_threads(num_procs);
+
+#pragma omp parallel for
     for (int i = 1; i < argc; i++) {
         const char *file_name = argv[i];
         char *fname_copy_base = strdup(file_name);

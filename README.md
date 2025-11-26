@@ -5,6 +5,7 @@ Apply digital image processing transformations on PPM files.
 ## Program Files
 
 - [dip_seq.c](./src/dip_seq.c)
+- [dip_mp.c](./src/dip_mp.c)
 - [Image.c](./src/Image.c)
 - [DIPs.c](./src/DIPs.c)
 - [FileIO.c](./src/FileIO.c)
@@ -23,6 +24,14 @@ make
 ```
 
 ## Run Instructions
+
+### Prepare Workload
+
+Run the following script to download a sample image and create `N` copies.
+
+```sh
+./download.sh [N]
+```
 
 ### Sequential Version
 

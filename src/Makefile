@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS ?= -Wall
-TARGETS = dip_seq Image.o FileIO.o DIPs.o utils.o
+TARGETS = dip_mp dip_seq Image.o FileIO.o DIPs.o utils.o
 RM = rm -f
 DEBUG = 0
 
@@ -10,6 +10,9 @@ endif
 
 all : $(TARGETS)
 .PHONY : all
+
+dip_mp : dip_mp.c Image.o FileIO.o DIPs.o utils.o
+	$(CC) $(CFLAGS) -fopenmp dip_mp.c Image.o FileIO.o DIPs.o utils.o -o dip_mp
 
 dip_seq : dip_seq.c Image.o FileIO.o DIPs.o utils.o
 	$(CC) $(CFLAGS) dip_seq.c Image.o FileIO.o DIPs.o utils.o -o dip_seq
