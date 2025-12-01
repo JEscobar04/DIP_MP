@@ -59,4 +59,5 @@ dkms.conf
 *.ppm
 
 dip_seq
-dip_mp
+dip_mp_for
+dip_mp_tasks

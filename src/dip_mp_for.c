@@ -15,28 +15,14 @@
 #define NUM_THREADS 0
 #define LOGGING 1
 
-const char *FILE_EXT = ".ppm";
-
 int main(int argc, char **argv) {
     if (argc == 1) {
-        fprintf(stderr, "Parallel Digital Image Processing\n");
+        fprintf(stderr, "Parallel Digital Image Processing (FOR)\n");
         fprintf(stderr, "Usage: %s [FILE_NAME...]\n", argv[0]);
         return 1;
     }
 
-    // Ensure all files exist and have the correct extension
-    for (int i = 1; i < argc; i++) {
-        char *file_name = argv[i];
-        int len = strlen(file_name);
-        bool exists = access(file_name, F_OK) != -1;
-        if (len > 4) {
-            bool has_correct_ext = (strcmp(&file_name[len - 4], FILE_EXT) == 0);
-            if (has_correct_ext && exists)
-                continue;
-        }
-        fprintf(stderr, "Error: invalid file name: %s\n", file_name);
-        return 1;
-    }
+    if (check_input_files(argc, argv)) return 1;
 
     // Use the maximum number of available processors if unspecified
     const int num_procs = omp_get_num_procs();
@@ -44,7 +30,7 @@ int main(int argc, char **argv) {
     omp_set_num_threads(thread_count);
 #if LOGGING
     const int num_images = argc - 1;
-    printf("Using %d / %d available threads to process %d images\n", thread_count, num_procs, num_images);
+    printf("Using %d / %d available threads to process %d images...\n", thread_count, num_procs, num_images);
     double start_time = omp_get_wtime();
 #endif
 
