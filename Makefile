@@ -28,4 +28,5 @@ PhotoLab : src/PhotoLab.c
 
 clean : 
 	$(RM) $(TARGETS)
+
 .PHONY : clean
