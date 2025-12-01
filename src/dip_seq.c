@@ -14,8 +14,6 @@
 
 #define LOGGING 1
 
-const char *FILE_EXT = ".ppm";
-
 int main(int argc, char **argv) {
     if (argc == 1) {
         fprintf(stderr, "Sequential Digital Image Processing\n");
@@ -23,22 +21,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Ensure all files exist and have the correct extension
-    for (int i = 1; i < argc; i++) {
-        char *file_name = argv[i];
-        int len = strlen(file_name);
-        bool exists = access(file_name, F_OK) != -1;
-        if (len > 4) {
-            bool has_correct_ext = (strcmp(&file_name[len - 4], FILE_EXT) == 0);
-            if (has_correct_ext && exists) continue;
-        }
-        fprintf(stderr, "Error: invalid file name: %s\n", file_name);
-        return 1;
-    }
+    if (check_input_files(argc, argv)) return 1;
 
 #if LOGGING
     const int num_images = argc - 1;
-    printf("Processing %d images\n", num_images);
+    printf("Processing %d images...\n", num_images);
     struct timespec start_time;
     clock_gettime(CLOCK_MONOTONIC, &start_time);
 #endif

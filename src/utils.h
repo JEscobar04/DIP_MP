@@ -1,10 +1,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <omp.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <omp.h>
+
+#define FILE_EXT ".ppm"
 
 void build_file_name(const char *dir,
                      const char *base,
@@ -12,6 +14,8 @@ void build_file_name(const char *dir,
                      const char *ext,
                      char *out,
                      int out_size);
+
+int check_input_files(int argc, char **argv);
 
 void process_file(int file_id);
 
