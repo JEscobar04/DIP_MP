@@ -26,11 +26,15 @@ int main(int argc, char **argv) {
 
     // Use the maximum number of available processors if unspecified
     const int num_procs = omp_get_num_procs();
-    int thread_count = (NUM_THREADS > 0) ? NUM_THREADS : num_procs;
+    const int thread_count = (NUM_THREADS > 0) ? NUM_THREADS : num_procs;
     omp_set_num_threads(thread_count);
 #if LOGGING
     const int num_images = argc - 1;
     printf("Using %d / %d available threads to process %d images...\n", thread_count, num_procs, num_images);
+    const int thread_limit = omp_get_thread_limit();
+    if (thread_count > thread_limit) {
+        printf("Warning: The requested thread count (%d) is greater than the thread limit (%d)\n", thread_count, thread_limit);
+    }
     double start_time = omp_get_wtime();
 #endif
 

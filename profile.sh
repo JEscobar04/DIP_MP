@@ -20,6 +20,15 @@ if [ ! -x "$EXE" ]; then
 fi
 
 echo "Profiling $EXE with input sizes: ${SIZES[*]}"
+# Set the OpenMP thread limit to the maximum number of available processors
+OMP_THREAD_LIMIT=$(nproc)
+export OMP_THREAD_LIMIT
+echo "OMP_THREAD_LIMIT=$OMP_THREAD_LIMIT"
+echo
+
+# Clean up input files
+echo "Cleaning input files..."
+rm -f "$IMGDIR"/*.ppm
 echo
 
 run_index=1
