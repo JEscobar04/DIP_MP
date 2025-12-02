@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     double start_time = omp_get_wtime();
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(guided)
     for (int i = 1; i < argc; i++) {
         const char *file_name = argv[i];
         char *fname_copy_base = strdup(file_name);
