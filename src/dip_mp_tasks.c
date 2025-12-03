@@ -58,11 +58,11 @@ int main(int argc, char **argv) {
                 char *base_name = basename(fname_copy_base);
                 char *fname_copy_path = strdup(file_name);
                 char *file_path = dirname(fname_copy_path);
-                char output_file[512] = {0};
                 #pragma omp parallel sections num_threads(3)
                 {
                     #pragma omp section
                     {
+                        char output_file[512] = {0};
                         // Load image
                         IMAGE *image = NULL;
                         image = LoadImage(file_name);
@@ -75,25 +75,27 @@ int main(int argc, char **argv) {
                     }
                     #pragma omp section
                     {
+                        char output_file[512] = {0};
                         // Load image
                         IMAGE *image = NULL;
                         image = LoadImage(file_name);
                         assert(image);
-                        // Convert to black and white
+                        // Sharpen the image
                         image = Sharpen(image);
-                        build_file_name(file_path, base_name, "_bw", FILE_EXT, output_file, sizeof(output_file));
+                        build_file_name(file_path, base_name, "_sharpen", FILE_EXT, output_file, sizeof(output_file));
                         assert(!SaveImage(output_file, image));
                         DeleteImage(image);
                     }
                     #pragma omp section
                     {
+                        char output_file[512] = {0};
                         // Load image
                         IMAGE *image = NULL;
                         image = LoadImage(file_name);
                         assert(image);
-                        // Convert to black and white
+                        // Flip the image vertically
                         image = VFlip(image);
-                        build_file_name(file_path, base_name, "_bw", FILE_EXT, output_file, sizeof(output_file));
+                        build_file_name(file_path, base_name, "_vflip", FILE_EXT, output_file, sizeof(output_file));
                         assert(!SaveImage(output_file, image));
                         DeleteImage(image);
                     }
