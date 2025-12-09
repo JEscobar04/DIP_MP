@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS ?= -Wall
-TARGETS = dip_mp_tasks dip_mp_for dip_seq Image.o FileIO.o DIPs.o utils.o
+TARGETS = dip_mp_tasks2 dip_mp_tasks dip_mp_for dip_seq Image.o FileIO.o DIPs.o utils.o
 RM = rm -f
 DEBUG = 0
 
