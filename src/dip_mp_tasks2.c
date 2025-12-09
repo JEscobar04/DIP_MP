@@ -92,22 +92,22 @@ int main(int argc, char **argv)
         int team_threads = (team_id == full_teams && remainder > 0)
                                ? remainder       // final partial team
                                : team_size;      // full team
+        int i = 0, done = 0;
 
         while (1) {
-            int i;
-
-            // One thread per team grabs the next file
-            if (lane == 0) {
-                #pragma omp atomic capture
-                i = next_image++;
-            }
-
-            // Broadcast "i" to all team members
+            /* Team leader grabs job */
             #pragma omp barrier
-            if (lane != 0)
-                i = next_image - 1;
+            #pragma omp single
+            {
+                if (next_image > num_files) {
+                    done = 1;
+                } else {
+                    i = next_image++;
+                }
+            }
+            #pragma omp barrier   // broadcast done and i
 
-            if (i > num_files)
+            if (done)
                 break;
 
             const char *file_name = argv[i];
