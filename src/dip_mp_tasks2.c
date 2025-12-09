@@ -1,143 +1,142 @@
 #include <assert.h>
-#include <libgen.h>
 #include <omp.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "DIPs.h"
 #include "FileIO.h"
 #include "Image.h"
 #include "utils.h"
 
-
-#define NUM_THREADS 0
+#define TEAM_SIZE 3    // BW, Sharpen, Flip
+#define NUM_THREADS 128  // 0 = max threads, >0 = user-defined
 #define LOGGING 1
 
-static void run_section(int lane, const char *file_name, const char *file_path, const char *base_name)
+/* Thread-safe path splitter */
+static void split_path(const char *filepath,
+                       char *dir, size_t dsz,
+                       char *base, size_t bsz)
 {
-    char output_file[512] = {0};
+    const char *slash = strrchr(filepath, '/');
+    if (!slash) {
+        snprintf(dir, dsz, ".");
+        snprintf(base, bsz, "%s", filepath);
+    } else {
+        size_t plen = slash - filepath;
+        if (plen >= dsz) plen = dsz - 1;
+        memcpy(dir, filepath, plen);
+        dir[plen] = '\0';
+        snprintf(base, bsz, "%s", slash + 1);
+    }
+}
+
+static void run_section(int lane,
+                        const char *file_name,
+                        const char *file_path,
+                        const char *base_name)
+{
+    char out[512];
+    IMAGE *image = LoadImage(file_name);
+    assert(image);
 
     if (lane == 0) {
-        IMAGE *image = LoadImage(file_name);
-        assert(image);
         image = BlackNWhite(image);
-        build_file_name(file_path, base_name, "_bw", FILE_EXT, output_file, sizeof(output_file));
-        assert(!SaveImage(output_file, image));
-        DeleteImage(image);
-    } 
-    else if (lane == 1) {
-        IMAGE *image = LoadImage(file_name);
-        assert(image);
-        image = Sharpen(image);
-        build_file_name(file_path, base_name, "_sharpen", FILE_EXT, output_file, sizeof(output_file));
-        assert(!SaveImage(output_file, image));
-        DeleteImage(image);
-    } 
-    else if (lane == 2) {
-        IMAGE *image = LoadImage(file_name);
-        assert(image);
-        image = VFlip(image);
-        build_file_name(file_path, base_name, "_vflip", FILE_EXT, output_file, sizeof(output_file));
-        assert(!SaveImage(output_file, image));
-        DeleteImage(image);
+        build_file_name(file_path, base_name, "_bw", FILE_EXT, out, sizeof(out));
     }
+    else if (lane == 1) {
+        image = Sharpen(image);
+        build_file_name(file_path, base_name, "_sharpen", FILE_EXT, out, sizeof(out));
+    }
+    else { // lane == 2
+        image = VFlip(image);
+        build_file_name(file_path, base_name, "_vflip", FILE_EXT, out, sizeof(out));
+    }
+
+    assert(!SaveImage(out, image));
+    DeleteImage(image);
 }
 
 int main(int argc, char **argv)
 {
-    if (argc == 1) {
-        fprintf(stderr, "Parallel Digital Image Processing\n");
-        fprintf(stderr, "Usage: %s [FILE_NAME...]\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s [files...]\n", argv[0]);
         return 1;
     }
 
     const int num_files = argc - 1;
 
-    // Use the maximum number of available processors
-    const int num_procs = omp_get_num_procs();
-    const int thread_count = (NUM_THREADS > 0) ? NUM_THREADS : num_procs;
-    omp_set_num_threads(thread_count);
+    /* NUM_THREADS handling */
+    const int max_procs = omp_get_num_procs();
+    const int T = (NUM_THREADS > 0) ? NUM_THREADS : max_procs;
+    omp_set_num_threads(T);
 
-    int T = thread_count;
-    int team_size = 3;
-
-    int full_teams = T / team_size;
-    int remainder = T % team_size;
-
-    int num_teams = full_teams + (remainder > 0 ? 1 : 0);
+    const int full_teams = T / TEAM_SIZE;
+    const int remainder  = T % TEAM_SIZE;
+    const int num_teams  = full_teams + (remainder ? 1 : 0);
 
     if (LOGGING) {
         printf("Total threads: %d\n", T);
-        printf("Full teams:    %d (3 threads each)\n", full_teams);
-        if (remainder > 0)
-            printf("Remainder team: %d threads (concurrent execution)\n", remainder);
-        printf("Total teams:   %d\n", num_teams);
-        printf("Images to process: %d\n", num_files);
-        printf("Max parallel images: %d\n", full_teams + (remainder > 0 ? 1 : 0));
+        printf("Full 3-thread teams: %d\n", full_teams);
+        if (remainder)
+            printf("Remainder team: %d threads (concurrent)\n", remainder);
+        printf("Total teams: %d\n", num_teams);
+        printf("Images: %d\n", num_files);
     }
 
-    int next_image = 1;  // index in argv[]
+    double start = omp_get_wtime();
 
-    double start_time = omp_get_wtime();
+    int next_image = 1;
 
-    #pragma omp parallel num_threads(T)
+    #pragma omp parallel shared(next_image)
     {
-        int tid = omp_get_thread_num();
-        int team_id = tid / team_size;  // which team
-        int lane = tid % team_size;     // 0,1,2
+        const int tid = omp_get_thread_num();
+        const int team_id = tid / TEAM_SIZE;
+        const int lane = tid % TEAM_SIZE;
 
-        int team_threads = (team_id == full_teams && remainder > 0)
-                               ? remainder       // final partial team
-                               : team_size;      // full team
-        int i = 0, done = 0;
+        /* team thread count (3 or remainder) */
+        const int team_threads =
+            (team_id == full_teams && remainder > 0)
+                ? remainder
+                : TEAM_SIZE;
+
+        int img_idx = 0;
+        int done = 0;
 
         while (1) {
-            /* Team leader grabs job */
+
+            /* 1) Team leader grabs the next image index */
             #pragma omp barrier
             #pragma omp single
             {
-                if (next_image > num_files) {
+                if (next_image > num_files)
                     done = 1;
-                } else {
-                    i = next_image++;
-                }
+                else
+                    img_idx = next_image++;
             }
-            #pragma omp barrier   // broadcast done and i
-
-            if (done)
-                break;
-
-            const char *file_name = argv[i];
-
-            // Split file path + base name
-            char *tmp1 = strdup(file_name);
-            char *base_name = basename(tmp1);
-            char *tmp2 = strdup(file_name);
-            char *file_path = dirname(tmp2);
-
-            // Synchronize before starting sections
             #pragma omp barrier
 
-            // Run the lane-specific section
+            if (done) break;
+
+            const char *file_name = argv[img_idx];
+
+            /* Thread-safe path split */
+            char dir[512], base[512];
+            split_path(file_name, dir, sizeof(dir), base, sizeof(base));
+
+            /* 2) Lane performs the assigned DIP operation */
             if (lane < team_threads) {
-                run_section(lane, file_name, file_path, base_name);
+                run_section(lane, file_name, dir, base);
             }
 
-            // synchronize before grabbing next image
+            /* 3) Wait for the team before grabbing next image */
             #pragma omp barrier
-
-            free(tmp1);
-            free(tmp2);
         }
     }
 
-    double end_time = omp_get_wtime();
-
+    double end = omp_get_wtime();
     if (LOGGING) {
-        printf("Elapsed time: %.5f s\n", end_time - start_time);
+        printf("Elapsed: %.4f s\n", end - start);
     }
 
     return 0;
