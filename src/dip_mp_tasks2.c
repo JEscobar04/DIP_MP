@@ -12,16 +12,11 @@
 #include "Image.h"
 #include "utils.h"
 
+
+#define NUM_THREADS 0
 #define LOGGING 1
 
-static void process_bw(const char *file_path, const char *base_name);
-static void process_sharpen(const char *file_path, const char *base_name);
-static void process_vflip(const char *file_path, const char *base_name);
-
-static void run_section(int lane,
-                        const char *file_name,
-                        const char *file_path,
-                        const char *base_name)
+static void run_section(int lane, const char *file_name, const char *file_path, const char *base_name)
 {
     char output_file[512] = {0};
 
@@ -61,8 +56,12 @@ int main(int argc, char **argv)
 
     const int num_files = argc - 1;
 
-    // Determine threads
-    int T = omp_get_max_threads();
+    // Use the maximum number of available processors
+    const int num_procs = omp_get_num_procs();
+    const int thread_count = (NUM_THREADS > 0) ? NUM_THREADS : num_procs;
+    omp_set_num_threads(thread_count);
+
+    int T = thread_count;
     int team_size = 3;
 
     int full_teams = T / team_size;

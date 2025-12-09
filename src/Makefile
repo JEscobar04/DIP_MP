@@ -20,6 +20,9 @@ dip_mp_for : dip_mp_for.c Image.o FileIO.o DIPs.o utils.o
 dip_mp_tasks : dip_mp_tasks.c Image.o FileIO.o DIPs.o utils.o
 	$(CC) $(CFLAGS) -fopenmp dip_mp_tasks.c Image.o FileIO.o DIPs.o utils.o -o dip_mp_tasks
 
+dip_mp_tasks2 : dip_mp_tasks2.c Image.o FileIO.o DIPs.o utils.o
+	$(CC) $(CFLAGS) -fopenmp dip_mp_tasks2.c Image.o FileIO.o DIPs.o utils.o -o dip_mp_tasks2
+
 Image.o : Image.c Image.h
 	$(CC) -c $(CFLAGS) Image.c -o Image.o
 
